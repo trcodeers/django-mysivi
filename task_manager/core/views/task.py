@@ -11,11 +11,13 @@ from core.serializers.task import (
     TaskAssignSerializer,
     TaskStatusUpdateSerializer,
 )
+from task_manager.core.throttles import TaskCreateRateThrottle, TaskListRateThrottle
 
 TASK_LIST_PAGINATION_SIZE = 10  # same as FastAPI config
 
 
 class TaskListAPIView(APIView):
+    throttle_classes = [TaskListRateThrottle]
     permission_classes = [IsAuthenticated, IsManager]
 
     def get(self, request):
@@ -70,6 +72,7 @@ class TaskListAPIView(APIView):
 
 
 class TaskCreateAPIView(APIView):
+    throttle_classes = [TaskCreateRateThrottle]
     permission_classes = [IsAuthenticated, IsManager]
 
     def post(self, request):
@@ -109,6 +112,8 @@ class TaskCreateAPIView(APIView):
             "assigned_to_id": assigned_to.id if assigned_to else None,
             "message": "Task created successfully"
         }, status=201)
+
+
 
 class TaskAssignAPIView(APIView):
     permission_classes = [IsAuthenticated, IsManager]
@@ -150,6 +155,7 @@ class TaskAssignAPIView(APIView):
         })
 
 
+
 class TaskDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated, IsManager]
 
@@ -172,6 +178,8 @@ class TaskDeleteAPIView(APIView):
             "task_id": task.id,
             "message": "Task deleted successfully"
         })
+
+
 
 class TaskStatusByManagerAPIView(APIView):
     permission_classes = [IsAuthenticated, IsManager]
@@ -199,6 +207,7 @@ class TaskStatusByManagerAPIView(APIView):
             "new_status": task.status,
             "message": "Task status updated successfully"
         })
+
 
 
 class TaskStatusByReporteeAPIView(APIView):

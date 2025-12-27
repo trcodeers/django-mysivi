@@ -126,8 +126,14 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle"
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "task_list": "50/min",
-        "task_create": "20/min",
-        "login": "5/min",
+        "anon": "2/min",     # unauthenticated (IP-based)
+        "user": "9/min",    # authenticated (user-based)
     }
 }
+
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "signup": "5/min",
+    "login": "10/min",
+    "task_create": "12/min",
+    "task_list": "15/min",
+})

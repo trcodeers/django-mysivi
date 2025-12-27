@@ -11,8 +11,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from core.authentication import CsrfExemptSessionAuthentication
+from task_manager.core.throttles import LoginRateThrottle, SignupRateThrottle, TaskCreateRateThrottle
 
 class ManagerSignupAPIView(APIView):
+    throttle_classes = [SignupRateThrottle]
     authentication_classes = []
     permission_classes = []
 
@@ -44,6 +46,7 @@ class ManagerSignupAPIView(APIView):
         )
 
 class LoginAPIView(APIView):
+    throttle_classes = [LoginRateThrottle]
     authentication_classes = []
     permission_classes = []
 
