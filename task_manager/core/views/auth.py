@@ -11,7 +11,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from core.authentication import CsrfExemptSessionAuthentication
-from task_manager.core.throttles import LoginRateThrottle, SignupRateThrottle, TaskCreateRateThrottle
+from core.throttles import LoginRateThrottle, SignupRateThrottle, TaskCreateRateThrottle
 
 class ManagerSignupAPIView(APIView):
     throttle_classes = [SignupRateThrottle]
@@ -98,3 +98,11 @@ class MeAPIView(APIView):
             "username": request.user.username,
             "role": request.user.role
         })
+
+# For testing free access without authentication
+class FreeResourceAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        return Response({"message": "This is a free resource accessible without authentication."})

@@ -11,7 +11,7 @@ from core.serializers.task import (
     TaskAssignSerializer,
     TaskStatusUpdateSerializer,
 )
-from task_manager.core.throttles import TaskCreateRateThrottle, TaskListRateThrottle
+from core.throttles import TaskCreateRateThrottle, TaskListRateThrottle
 
 TASK_LIST_PAGINATION_SIZE = 10  # same as FastAPI config
 

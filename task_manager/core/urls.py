@@ -1,5 +1,5 @@
 from django.urls import path
-from core.views.auth import LoginAPIView, LogoutAPIView, ManagerSignupAPIView, MeAPIView
+from core.views.auth import FreeResourceAPIView, LoginAPIView, LogoutAPIView, ManagerSignupAPIView, MeAPIView
 from core.views.user import CreateReporteeAPIView
 from core.views.task import TaskAssignAPIView, TaskCreateAPIView, TaskDeleteAPIView, TaskListAPIView, TaskStatusByManagerAPIView, TaskStatusByReporteeAPIView
 
@@ -17,4 +17,5 @@ urlpatterns = [
     path("tasks/<int:task_id>/status", TaskStatusByManagerAPIView.as_view()),
     path("tasks/<int:task_id>/self", TaskStatusByReporteeAPIView.as_view()),
 
+    path("free-resource", FreeResourceAPIView.as_view()),  # New free resource endpoint
 ]

@@ -123,17 +123,18 @@ STATIC_URL = "static/"
 
 REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.ScopedRateThrottle"
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "2/min",     # unauthenticated (IP-based)
-        "user": "9/min",    # authenticated (user-based)
+        "user": "4/min",    # authenticated (user-based)
     }
 }
 
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "signup": "5/min",
-    "login": "10/min",
+    "login": "3/min",
     "task_create": "12/min",
-    "task_list": "15/min",
+    # "task_list": "10/min",
 })
