@@ -20,7 +20,7 @@ class CreateReporteeAPIView(APIView):
         serializer = ReporteeCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        manager = request.user  # 🔥 THIS IS NOW SAFE & CORRECT
+        manager = request.user   
 
         reportee = User.objects.create(
             username=serializer.validated_data["username"],

@@ -18,7 +18,7 @@ TASK_LIST_PAGINATION_SIZE = 10  # same as FastAPI config
 
 class TaskListAPIView(APIView):
     throttle_classes = [TaskListRateThrottle]
-    permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         page = int(request.query_params.get("page", 1))
