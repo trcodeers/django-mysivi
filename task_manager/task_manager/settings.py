@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
+from task_manager.core.config import LOGIN_RATE, SIGNUP_RATE, TASK_CREATE_RATE, TASK_LIST_RATE
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -133,8 +135,8 @@ REST_FRAMEWORK = {
 }
 
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
-    "signup": "5/min",
-    "login": "3/min",
-    "task_create": "12/min",
-    "task_list": "10/min",
+    "signup": SIGNUP_RATE,
+    "login": LOGIN_RATE,
+    "task_create": TASK_CREATE_RATE,
+    "task_list": TASK_LIST_RATE,
 })

@@ -72,7 +72,7 @@ class LoginAPIView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # 🔑 creates session (Django handles cookie)
+        #  creates session (Django handles cookie)
         login(request, user)
 
         return Response(

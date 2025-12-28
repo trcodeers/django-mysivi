@@ -13,32 +13,30 @@ from core.serializers.task import (
 from core.throttles import TaskCreateRateThrottle, TaskListRateThrottle
 from core.permissions.base import HasPermission
 from core.authentication import CsrfExemptSessionAuthentication
-
-TASK_LIST_PAGINATION_SIZE = 10  # same as FastAPI config
-
+from core.config import TASK_LIST_PAGINATION_SIZE
 
 class TaskListAPIView(APIView):
     throttle_classes = [TaskListRateThrottle]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user  # ✅ CRITICAL FIX
+        user = request.user  
 
         page = int(request.query_params.get("page", 1))
         offset = (page - 1) * TASK_LIST_PAGINATION_SIZE
 
-        # 🔐 Role-based query with strict isolation
+        # if it is a manager, fetch tasks created by them
         if user.role == "MANAGER":
             qs = Task.objects.filter(
-                created_by=user,            # ✅ manager-specific
-                company=user.company,       # ✅ tenant isolation
+                created_by=user,            
+                company=user.company,       
                 is_deleted=False
             )
-
+        # if it is a reportee, fetch tasks assigned to them 
         elif user.role == "REPORTEE":
             qs = Task.objects.filter(
-                assigned_to=user,           # ✅ only assigned tasks
-                company=user.company,       # ✅ tenant isolation
+                assigned_to=user,          
+                company=user.company,       
                 is_deleted=False
             )
 
@@ -85,6 +83,7 @@ class TaskListAPIView(APIView):
 
 
 class TaskCreateAPIView(APIView):
+    throttle_classes = [TaskCreateRateThrottle]
     authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
     required_permission = "task:create"
@@ -93,18 +92,18 @@ class TaskCreateAPIView(APIView):
         serializer = TaskCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        manager = request.user  # ✅ MUST be the logged-in manager
+        manager = request.user  # MUST be the loggedin manager
 
         assigned_to = None
         assigned_to_id = serializer.validated_data.get("assigned_to_id")
 
-        # 🔐 Validate reportee if assignment is requested
+        # Validate reportee if assignment is requested
         if assigned_to_id is not None:
             assigned_to = User.objects.filter(
                 id=assigned_to_id,
                 role="REPORTEE",
-                company=manager.company,   # ✅ same company
-                manager=manager            # ✅ created by THIS manager
+                company=manager.company,   #  same company
+                manager=manager            #  created by THIS manager
             ).first()
 
             if not assigned_to:
@@ -113,13 +112,13 @@ class TaskCreateAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # 🔐 Create task under THIS manager & company
+        # Create task under THIS manager & company
         task = Task.objects.create(
             title=serializer.validated_data["title"],
             description=serializer.validated_data.get("description"),
             assigned_to=assigned_to,
-            created_by=manager,           # ✅ ownership enforced
-            company=manager.company       # ✅ tenant isolation
+            created_by=manager,           #  ownership enforced
+            company=manager.company       #  tenant isolation
         )
 
         return Response(
@@ -141,13 +140,13 @@ class TaskAssignAPIView(APIView):
         serializer = TaskAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        manager = request.user  # ✅ CRITICAL FIX
+        manager = request.user  
 
-        # 🔐 1️⃣ Fetch task created by THIS manager in SAME company
+        #  Fetch task created by THIS manager in SAME company
         task = Task.objects.filter(
             id=task_id,
-            created_by=manager,         # ✅ ownership enforced
-            company=manager.company,    # ✅ tenant isolation
+            created_by=manager,         
+            company=manager.company,    
             is_deleted=False
         ).first()
 
@@ -157,11 +156,11 @@ class TaskAssignAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 🔐 2️⃣ Fetch reportee from SAME company
+        #  Fetch reportee from SAME company
         reportee = User.objects.filter(
             id=serializer.validated_data["assigned_to_id"],
             role="REPORTEE",
-            company=manager.company     # ✅ tenant isolation
+            company=manager.company     
         ).first()
 
         if not reportee:
@@ -170,7 +169,7 @@ class TaskAssignAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 🔁 3️⃣ Assign / reassign task
+        # Assign / reassign task
         task.assigned_to = reportee
         task.save(update_fields=["assigned_to", "updated_at"])
 
@@ -182,7 +181,6 @@ class TaskAssignAPIView(APIView):
             },
             status=status.HTTP_200_OK
         )
-
 
 
 class TaskDeleteAPIView(APIView):
@@ -224,8 +222,8 @@ class TaskStatusByManagerAPIView(APIView):
 
         task = Task.objects.filter(
             id=task_id,
-            created_by=manager,          # ✅ ownership
-            company=manager.company,     # ✅ tenant isolation
+            created_by=manager,           
+            company=manager.company,      
             is_deleted=False
         ).first()
 
@@ -255,12 +253,12 @@ class TaskStatusByReporteeAPIView(APIView):
         serializer = TaskStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        reportee = request.user  # ✅ FIX
+        reportee = request.user
 
         task = Task.objects.filter(
             id=task_id,
-            assigned_to=reportee,         # ✅ only his task
-            company=reportee.company,     # ✅ tenant isolation
+            assigned_to=reportee,         
+            company=reportee.company,     
             is_deleted=False
         ).first()
 
