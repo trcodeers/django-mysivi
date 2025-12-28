@@ -136,5 +136,5 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "signup": "5/min",
     "login": "3/min",
     "task_create": "12/min",
-    # "task_list": "10/min",
+    "task_list": "10/min",
 })
