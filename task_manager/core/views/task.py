@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from core.permissions import IsManager, IsReportee
+# from core.permissions import IsManager, IsReportee
 
 from core.models import Task, User
 from core.serializers.task import (
@@ -12,6 +12,7 @@ from core.serializers.task import (
     TaskStatusUpdateSerializer,
 )
 from core.throttles import TaskCreateRateThrottle, TaskListRateThrottle
+from core.permissions.base import HasPermission
 
 TASK_LIST_PAGINATION_SIZE = 10  # same as FastAPI config
 
@@ -72,8 +73,9 @@ class TaskListAPIView(APIView):
 
 
 class TaskCreateAPIView(APIView):
-    throttle_classes = [TaskCreateRateThrottle]
-    permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [HasPermission]
+    required_permission = "task:create"
+
 
     def post(self, request):
         serializer = TaskCreateSerializer(data=request.data)
@@ -116,7 +118,8 @@ class TaskCreateAPIView(APIView):
 
 
 class TaskAssignAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [HasPermission]
+    required_permission = "task:assign"
 
     def patch(self, request, task_id):
         serializer = TaskAssignSerializer(data=request.data)
@@ -157,7 +160,8 @@ class TaskAssignAPIView(APIView):
 
 
 class TaskDeleteAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [HasPermission]
+    required_permission = "task:delete"
 
     def delete(self, request, task_id):
         manager = User.objects.filter(role="MANAGER").first()
@@ -182,7 +186,8 @@ class TaskDeleteAPIView(APIView):
 
 
 class TaskStatusByManagerAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [HasPermission]
+    required_permission = "task:update:any"
 
     def patch(self, request, task_id):
         serializer = TaskStatusUpdateSerializer(data=request.data)
@@ -211,7 +216,9 @@ class TaskStatusByManagerAPIView(APIView):
 
 
 class TaskStatusByReporteeAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsReportee]
+    permission_classes = [HasPermission]
+    required_permission = "task:update:self"
+
 
     def patch(self, request, task_id):
         serializer = TaskStatusUpdateSerializer(data=request.data)

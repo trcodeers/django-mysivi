@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from core.models import User
 from core.serializers.user import ReporteeCreateSerializer
-from core.permissions import IsManager
 from core.authentication import CsrfExemptSessionAuthentication
+from core.permissions.base import HasPermission
 
 
 class CreateReporteeAPIView(APIView):
@@ -14,7 +14,9 @@ class CreateReporteeAPIView(APIView):
         ONLY Manager can create reportees
     """
     authentication_classes = [CsrfExemptSessionAuthentication]
-    permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [HasPermission]
+    required_permission = "reportee:create"
+
 
     def post(self, request):
         serializer = ReporteeCreateSerializer(data=request.data)
