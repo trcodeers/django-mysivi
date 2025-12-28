@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
-from task_manager.core.config import LOGIN_RATE, SIGNUP_RATE, TASK_CREATE_RATE, TASK_LIST_RATE
+from core.config import LOGIN_RATE, SIGNUP_RATE, TASK_CREATE_RATE, TASK_LIST_RATE
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
