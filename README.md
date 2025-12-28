@@ -36,6 +36,9 @@ source .venv/bin/activate
 ### Install Dependencies
 pip install -r requirements.txt
 
+### change to django app folder
+cd task_manager
+
 ### Database Setup
 
 Run migrations:
