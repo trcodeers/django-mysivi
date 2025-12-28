@@ -211,7 +211,6 @@ class TaskDeleteAPIView(APIView):
         })
 
 
-
 class TaskStatusByManagerAPIView(APIView):
     authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
@@ -221,19 +220,23 @@ class TaskStatusByManagerAPIView(APIView):
         serializer = TaskStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        manager = User.objects.filter(role="MANAGER").first()
-        print("Manager:", manager)
+        manager = request.user  # ✅ FIX
+
         task = Task.objects.filter(
             id=task_id,
-            created_by=manager,
+            created_by=manager,          # ✅ ownership
+            company=manager.company,     # ✅ tenant isolation
             is_deleted=False
         ).first()
 
         if not task:
-            return Response({"detail": "Task not found"}, status=404)
+            return Response(
+                {"detail": "Task not found"},
+                status=404
+            )
 
         task.status = serializer.validated_data["status"]
-        task.save()
+        task.save(update_fields=["status", "updated_at"])
 
         return Response({
             "task_id": task.id,
@@ -248,36 +251,39 @@ class TaskStatusByReporteeAPIView(APIView):
     permission_classes = [HasPermission]
     required_permission = "task:update:self"
 
-
     def patch(self, request, task_id):
         serializer = TaskStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        reportee = User.objects.filter(role="REPORTEE").first()
+        reportee = request.user  # ✅ FIX
 
         task = Task.objects.filter(
             id=task_id,
-            assigned_to=reportee,
+            assigned_to=reportee,         # ✅ only his task
+            company=reportee.company,     # ✅ tenant isolation
             is_deleted=False
         ).first()
 
         if not task:
-            return Response({"detail": "Task not found"}, status=404)
+            return Response(
+                {"detail": "Task not found"},
+                status=404
+            )
 
         if task.status == "COMPLETED":
             return Response(
-                {"detail": "Task already completed"},
+                {"detail": "Task is already completed"},
                 status=409
             )
 
         if serializer.validated_data["status"] != "COMPLETED":
             return Response(
-                {"detail": "Reportee can update only to COMPLETED"},
+                {"detail": "Reportee can update task status only to COMPLETED"},
                 status=403
             )
 
         task.status = "COMPLETED"
-        task.save()
+        task.save(update_fields=["status", "updated_at"])
 
         return Response({
             "task_id": task.id,
