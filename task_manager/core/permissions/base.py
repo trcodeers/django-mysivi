@@ -7,16 +7,15 @@ class HasPermission(BasePermission):
     Generic role → permission checker
     """
 
-    required_permission = None
-
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        if not self.required_permission:
+        required_permission = getattr(view, "required_permission", None)
+        if not required_permission:
             return False
 
-        return self.required_permission in ROLE_PERMISSIONS.get(
+        return required_permission in ROLE_PERMISSIONS.get(
             request.user.role,
             set()
         )

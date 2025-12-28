@@ -3,7 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-# from core.permissions import IsManager, IsReportee
 
 from core.models import Task, User
 from core.serializers.task import (
