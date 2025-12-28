@@ -26,6 +26,38 @@ This project was developed and tested on **macOS (MacBook)** using the following
 - **Custom permission system**
 
 
+### Clone the Repository
+git clone <repository-url>
+
+### Create Virtual Environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+### Install Dependencies
+pip install -r requirements.txt
+
+### Database Setup
+
+Run migrations:
+
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
+Run the Server
+```
+python manage.py runserver
+```
+
+
+Server will start at:
+
+http://127.0.0.1:8000/
+
+
+---
+
 # Role-Based Permission Design
 
 ## Permissions are defined centrally using a capability-based model:
