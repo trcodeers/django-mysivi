@@ -89,45 +89,47 @@ class TaskCreateAPIView(APIView):
     permission_classes = [HasPermission]
     required_permission = "task:create"
 
-
     def post(self, request):
         serializer = TaskCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        manager = User.objects.filter(role="MANAGER").first()
-        if not manager:
-            return Response({"detail": "No manager exists"}, status=400)
+        manager = request.user  # ✅ MUST be the logged-in manager
 
         assigned_to = None
         assigned_to_id = serializer.validated_data.get("assigned_to_id")
 
-        if assigned_to_id:
+        # 🔐 Validate reportee if assignment is requested
+        if assigned_to_id is not None:
             assigned_to = User.objects.filter(
                 id=assigned_to_id,
                 role="REPORTEE",
-                company=manager.company
+                company=manager.company,   # ✅ same company
+                manager=manager            # ✅ created by THIS manager
             ).first()
 
             if not assigned_to:
                 return Response(
-                    {"detail": "Invalid reportee for this company"},
-                    status=400
+                    {"detail": "Invalid reportee for this manager or company"},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
+        # 🔐 Create task under THIS manager & company
         task = Task.objects.create(
             title=serializer.validated_data["title"],
             description=serializer.validated_data.get("description"),
             assigned_to=assigned_to,
-            created_by=manager,
-            company=manager.company
+            created_by=manager,           # ✅ ownership enforced
+            company=manager.company       # ✅ tenant isolation
         )
 
-        return Response({
-            "id": task.id,
-            "assigned_to_id": assigned_to.id if assigned_to else None,
-            "message": "Task created successfully"
-        }, status=201)
-
+        return Response(
+            {
+                "id": task.id,
+                "assigned_to_id": assigned_to.id if assigned_to else None,
+                "message": "Task created successfully",
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 
 class TaskAssignAPIView(APIView):
@@ -139,37 +141,47 @@ class TaskAssignAPIView(APIView):
         serializer = TaskAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        manager = User.objects.filter(role="MANAGER").first()
+        manager = request.user  # ✅ CRITICAL FIX
 
+        # 🔐 1️⃣ Fetch task created by THIS manager in SAME company
         task = Task.objects.filter(
             id=task_id,
-            company=manager.company,
+            created_by=manager,         # ✅ ownership enforced
+            company=manager.company,    # ✅ tenant isolation
             is_deleted=False
         ).first()
 
         if not task:
-            return Response({"detail": "Task not found"}, status=404)
+            return Response(
+                {"detail": "Task not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
+        # 🔐 2️⃣ Fetch reportee from SAME company
         reportee = User.objects.filter(
             id=serializer.validated_data["assigned_to_id"],
             role="REPORTEE",
-            company=manager.company
+            company=manager.company     # ✅ tenant isolation
         ).first()
 
         if not reportee:
             return Response(
                 {"detail": "Invalid reportee for this company"},
-                status=400
+                status=status.HTTP_400_BAD_REQUEST
             )
 
+        # 🔁 3️⃣ Assign / reassign task
         task.assigned_to = reportee
-        task.save()
+        task.save(update_fields=["assigned_to", "updated_at"])
 
-        return Response({
-            "task_id": task.id,
-            "assigned_to_id": reportee.id,
-            "message": "Task assigned successfully"
-        })
+        return Response(
+            {
+                "task_id": task.id,
+                "assigned_to_id": reportee.id,
+                "message": "Task assigned successfully",
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 
@@ -210,7 +222,7 @@ class TaskStatusByManagerAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         manager = User.objects.filter(role="MANAGER").first()
-
+        print("Manager:", manager)
         task = Task.objects.filter(
             id=task_id,
             created_by=manager,
