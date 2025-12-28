@@ -12,6 +12,7 @@ from core.serializers.task import (
 )
 from core.throttles import TaskCreateRateThrottle, TaskListRateThrottle
 from core.permissions.base import HasPermission
+from core.authentication import CsrfExemptSessionAuthentication
 
 TASK_LIST_PAGINATION_SIZE = 10  # same as FastAPI config
 
@@ -21,57 +22,70 @@ class TaskListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user  # ✅ CRITICAL FIX
+
         page = int(request.query_params.get("page", 1))
         offset = (page - 1) * TASK_LIST_PAGINATION_SIZE
 
-        # TEMP: pick first user (will replace with request.user later)
-        user = User.objects.first()
-
-        if not user:
-            return Response({"detail": "No users exist"}, status=400)
-
+        # 🔐 Role-based query with strict isolation
         if user.role == "MANAGER":
             qs = Task.objects.filter(
-                created_by=user,
-                is_deleted=False
-            )
-        else:
-            qs = Task.objects.filter(
-                assigned_to=user,
+                created_by=user,            # ✅ manager-specific
+                company=user.company,       # ✅ tenant isolation
                 is_deleted=False
             )
 
-        total = qs.count()
-        max_page = max(1, ceil(total / TASK_LIST_PAGINATION_SIZE))
+        elif user.role == "REPORTEE":
+            qs = Task.objects.filter(
+                assigned_to=user,           # ✅ only assigned tasks
+                company=user.company,       # ✅ tenant isolation
+                is_deleted=False
+            )
+
+        else:
+            return Response(
+                {"detail": "Invalid role"},
+                status=403
+            )
+
+        total_tasks = qs.count()
+        max_page = max(1, ceil(total_tasks / TASK_LIST_PAGINATION_SIZE))
 
         if page > max_page:
             return Response(
-                {"detail": f"Page {page} does not exist"},
+                {
+                    "detail": f"Page {page} does not exist. "
+                              f"Max page is {max_page}."
+                },
                 status=404
             )
 
-        tasks = qs.order_by("-created_at")[offset: offset + TASK_LIST_PAGINATION_SIZE]
+        tasks = (
+            qs.order_by("-created_at")
+              [offset: offset + TASK_LIST_PAGINATION_SIZE]
+        )
 
         return Response({
             "page": page,
             "page_size": TASK_LIST_PAGINATION_SIZE,
-            "total_tasks": total,
+            "total_tasks": total_tasks,
             "max_page": max_page,
             "tasks": [
                 {
-                    "task_id": t.id,
-                    "title": t.title,
-                    "status": t.status,
-                    "assigned_to_id": t.assigned_to_id,
-                    "created_at": t.created_at,
-                    "updated_at": t.updated_at,
+                    "task_id": task.id,
+                    "title": task.title,
+                    "status": task.status,
+                    "assigned_to_id": task.assigned_to_id,
+                    "created_at": task.created_at,
+                    "updated_at": task.updated_at,
                 }
-                for t in tasks
+                for task in tasks
             ]
         })
 
 
 class TaskCreateAPIView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
     required_permission = "task:create"
 
@@ -117,6 +131,7 @@ class TaskCreateAPIView(APIView):
 
 
 class TaskAssignAPIView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
     required_permission = "task:assign"
 
@@ -159,6 +174,7 @@ class TaskAssignAPIView(APIView):
 
 
 class TaskDeleteAPIView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
     required_permission = "task:delete"
 
@@ -185,6 +201,7 @@ class TaskDeleteAPIView(APIView):
 
 
 class TaskStatusByManagerAPIView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
     required_permission = "task:update:any"
 
@@ -215,6 +232,7 @@ class TaskStatusByManagerAPIView(APIView):
 
 
 class TaskStatusByReporteeAPIView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [HasPermission]
     required_permission = "task:update:self"
 
