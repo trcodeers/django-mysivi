@@ -35,11 +35,13 @@ python3 -m venv .venv
 ### Activate the virtual environment
 source .venv/bin/activate
 
+### change to django app folder
+cd task_manager
+
+
 ### Install Dependencies
 pip install -r requirements.txt
 
-### change to django app folder
-cd task_manager
 
 ### Database Setup
 
