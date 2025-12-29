@@ -61,6 +61,16 @@ http://127.0.0.1:8000/
 
 ---
 
+### CSRF Exemption on API Views
+
+Most API views explicitly use `CsrfExemptSessionAuthentication`.  
+This is done to simplify API testing with tools like Postman and curl, where managing CSRF tokens can be cumbersome.
+
+Session-based authentication is still used, and authorization checks remain enforced through permissions.  
+In a browser-based or production-facing setup, CSRF tokens should be sent via the `X-CSRFToken` header instead of exempting views.
+
+---
+
 # Role-Based Permission Design
 
 ## Permissions are defined centrally using a capability-based model:
