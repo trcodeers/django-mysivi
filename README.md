@@ -31,6 +31,8 @@ git clone <repository-url>
 
 ### Create Virtual Environment
 python3 -m venv .venv
+
+### Activate the virtual environment
 source .venv/bin/activate
 
 ### Install Dependencies
