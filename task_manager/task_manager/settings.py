@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
     "rest_framework",   # DRF
     "core",              # your app
+    "drf_spectacular", 
 
 ]
 
@@ -131,7 +132,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "2/min",     # unauthenticated (IP-based)
         "user": "4/min",    # authenticated (user-based)
-    }
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
 }
 
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
