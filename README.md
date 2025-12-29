@@ -11,6 +11,10 @@
 - Configurable API rate limiting
 - Clean, scalable project structure
 
+
+## For docs of this application
+http://localhost:8000/api/docs
+
 ## Local Setup (macOS)
 
 This project was developed and tested on **macOS (MacBook)** using the following environment:
